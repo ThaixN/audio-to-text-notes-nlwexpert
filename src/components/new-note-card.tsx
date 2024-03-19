@@ -3,9 +3,17 @@ import { X } from 'lucide-react'
 import { ChangeEvent, FormEvent,useState } from 'react'
 import { toast } from 'sonner'
 
-export function NewNoteCard () {
+
+interface NewNoteCardProps {
+  onNoteCreated: (content: string) => void
+}
+
+let speechRecognition: SpeechRecognition | null = null
+
+export function NewNoteCard ({ onNoteCreated }: NewNoteCardProps) {
   const [shouldShowOnBoarding, setShouldShowOnBoarding] = useState(true)
   // Variável: deveria mostrar o onboarding?
+  const [isRecording, setIsRecording] = useState(false)
   const [content, setContent] = useState('')
 
   function handleStartEditor() {
@@ -25,9 +33,67 @@ export function NewNoteCard () {
   function handleSaveNote(event: FormEvent) {
     event.preventDefault()
 
-    console.log(content)
+    if (content === '') {
+      return
+      // se o conteúdo estiver vazio, ele não salva a nota.
+    }
 
+    onNoteCreated(content)
+
+    setContent('')
+    setShouldShowOnBoarding(true)
     toast.success('Nota criada com sucesso!')
+  }
+
+  function handleStartRecordind() {
+    
+    const isSpeechRecognitionAPIAvailable = 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window 
+    // verifica se o navegador suporta a API de reconhecimento de voz 
+    || 'webkitSpeechRecognition' in window
+    
+    if (!isSpeechRecognitionAPIAvailable) {
+      alert('Seu navegador não suporta a API de reconhecimento de voz')
+      return
+    }
+
+    setIsRecording(true)
+    setShouldShowOnBoarding(false)
+    
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition
+  
+    speechRecognition = new SpeechRecognitionAPI()
+    
+    speechRecognition.lang = 'pt-BR'
+    speechRecognition.continuous = true
+    // grava até que fale manualmente para ele parar de gravar.
+    speechRecognition.maxAlternatives = 1
+    // quantidade de alternativas que ele pode dar para a transcrição do áudio.
+    speechRecognition.interimResults = true
+    // vai transferindo pra texto enquanto eu estiver falando, e não só quando parar de falar.
+  
+    speechRecognition.onresult = (event) => {
+      const transcription = Array.from(event.results).reduce((text,result) => {
+        return text.concat(result[0].transcript)
+      }, '')
+
+      setContent(transcription)
+    }
+
+    speechRecognition.onerror = (event) => {
+      console.error(event)
+    }
+    
+    speechRecognition.start()
+  }
+
+  
+
+  function handleStopRecording() {
+    setIsRecording(false)
+
+    if (speechRecognition !== null) {
+      speechRecognition.stop()
+    }  
   }
 
   return (
@@ -53,7 +119,7 @@ export function NewNoteCard () {
             {/* size=5 quer dizer que tanto altura quanto largura seria 5 (20px) */}
           </Dialog.Close>
 
-          <form onSubmit={handleSaveNote} className='flex-1 flex flex-col'>
+          <form className='flex-1 flex flex-col'>
 
             <div className='flex flex-1 flex-col gap-3 p-5'>
               {/* flex-q quer dizer que quer que essa div ocupe o máximo do tamanho do modal */}
@@ -64,7 +130,7 @@ export function NewNoteCard () {
 
               {shouldShowOnBoarding ? (
                 <p className='text-sm leading-6 text-slate-400'>
-                  Comece <button className='font-medium text-lime-400 hover:underline'>gravando uma nota</button> em áudio ou se preferir <button onClick={handleStartEditor} className='font-medium text-lime-400 hover:underline'>utilize apenas texto</button>.
+                  Comece <button type= "button" onClick={handleStartRecordind} className='font-medium text-lime-400 hover:underline'>gravando uma nota</button> em áudio ou se preferir <button type="button" onClick={handleStartEditor} className='font-medium text-lime-400 hover:underline'>utilize apenas texto</button>.
                 </p>
               ) : (
                 <textarea 
@@ -72,20 +138,37 @@ export function NewNoteCard () {
                   className="text-sm leading-6 text-slate-400 bg-transparent resize-none flex-1 outline-none"
                   // Quando clicar em "utilize apenas texto", vai mudar e aparecer a text area
                   onChange={handleContentChanged}
+                  value={content}
+                  // o value content fala que toda vez que digita e salva a nota, limpa a area de texto.
+
                 />
                 )}
             </div>
 
-            <button
-              type="submit"
-              className= 'w-full bg-lime-400 py-4 text-center text-sm text-lime-950 outline-none font-medium hover:bg-lime-500'
-              // o "group" transforma tudo em um grupo.
-              // Hover:bg-line-500 é a cor que fica o fundo quando a pessoa passar p mouse perto do botão.
-            >
-              Salvar notas
-              {/* Deseja <span className='text-red-400 group-hover:underline'>apagar essa nota</span>? */}
-              {/* o hover underline cria um sublinhado no texto. Com o group na frente, quando passar o mouse em qualquer lugar do botão, vai aparecer o sublinhado */}
-            </button>
+            {isRecording ? (
+              <button
+                type="button"
+                onClick= {handleStopRecording}
+                className= 'w-full flex items-center justify-center gap-2 bg-slate-900 py-4 text-center text-sm text-slate-300 outline-none font-medium hover:text-slate-100'
+                // o "group" transforma tudo em um grupo.
+                // Hover:bg-line-500 é a cor que fica o fundo quando a pessoa passar p mouse perto do botão.
+              >
+                <div className="size-3 rounded-full bg-red-500 animate-pulse" />
+                Gravando! (clique para interromper)
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleSaveNote}
+                className= 'w-full bg-lime-400 py-4 text-center text-sm text-lime-950 outline-none font-medium hover:bg-lime-500'
+                // o "group" transforma tudo em um grupo.
+                // Hover:bg-line-500 é a cor que fica o fundo quando a pessoa passar p mouse perto do botão.
+              >
+                Salvar notas
+                {/* Deseja <span className='text-red-400 group-hover:underline'>apagar essa nota</span>? */}
+                {/* o hover underline cria um sublinhado no texto. Com o group na frente, quando passar o mouse em qualquer lugar do botão, vai aparecer o sublinhado */}
+              </button>
+            )}
           </form>
         </Dialog.Content>
       </Dialog.Portal>

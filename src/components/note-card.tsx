@@ -20,7 +20,7 @@ export function NoteCard({ note }: NoteCardProps) {
         {/* hover ring adiciona uma borda pequena quando vc passa o mouse pelos note cards */}
         {/*focus aplica o css so quando clica no elemento. focus visible só ativa quando navega pelo teclado. */}
         <span className='text-sm font-medium text-slate-300'>
-          {note.date.toISOString()}
+              {formatDistanceToNow(note.date, {locale: ptBR, addSuffix: true})}
         </span>
         <p className='text-sm leading-6 text-slate-400'>
           {note.content}
