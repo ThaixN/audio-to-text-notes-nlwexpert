@@ -49,11 +49,11 @@ export function NewNoteCard ({ onNoteCreated }: NewNoteCardProps) {
     
     const isSpeechRecognitionAPIAvailable = 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window 
     // verifica se o navegador suporta a API de reconhecimento de voz 
-    || 'webkitSpeechRecognition' in window
-    
+    // in window verifica se a propriedade existe no objeto window.
+
     if (!isSpeechRecognitionAPIAvailable) {
       alert('Seu navegador não suporta a API de reconhecimento de voz')
-      return
+      return 
     }
 
     setIsRecording(true)
@@ -93,6 +93,7 @@ export function NewNoteCard ({ onNoteCreated }: NewNoteCardProps) {
 
     if (speechRecognition !== null) {
       speechRecognition.stop()
+      // caso o speechrecognition seja diferente de nulo, ai chama o método stop, para parar a gravação.
     }  
   }
 
@@ -111,7 +112,7 @@ export function NewNoteCard ({ onNoteCreated }: NewNoteCardProps) {
       <Dialog.Portal>
         <Dialog.Overlay className='inset-0 fixed bg-black/50'/>
         {/* o inset com fixed faz com que ocupe a tela toda, o bg black/60 dá 60% de opacidade */}
-        <Dialog.Content className='fixed overflow-hidden left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-[640px] h-[60vh] w-full bg-slate-700 rounded-md flex flex-col outline-none'>
+        <Dialog.Content className='fixed overflow-hidden inset-0 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 max-w-[640px] md:h-[60vh] md:w-full bg-slate-700 md:rounded-md flex flex-col outline-none'>
           <Dialog.Close className='absolute right-0 top-0 bg-slate-800 p-1.5 text-slate-400 hover-text-slate-100'>
             {/* o absolute right e top 0 colocam o X para o canto direito. Padding-1.5 dá um padding de 6px. o slate 800 coloca um plano de fundo no botão.*/}
             {/* hover slate 100 muda a cor do quadrado toda vez que o mouse passa por ele.*/}
